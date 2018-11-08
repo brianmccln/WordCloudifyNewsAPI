@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News API</title>
+<!--    <link rel="stylesheet" href="css/wordalyzer.css">-->
+    
+    <style>
+        
+        body {
+            padding: 0;
+            margin: 0;
+            font-family: sans-serif;
+            color: #333;
+        }
+        
+        /* CSS Grid Mobile-first */
+        #app {
+            display: grid;
+            grid-gap: 10px;
+            grid-template-areas: 
+                "header"
+                "article"
+                "aside"
+                "footer";
+            background-color: #555;
+            padding: 0;
+            margin: 0;
+        }
+        
+        header {
+            grid-area: header;
+            height: 100px;
+            width: 100%;
+            padding: 0.5rem;
+            margin: 0 auto;
+            text-align: center;
+                   
+/*            background-image: url(images/breaking-news-banner-1333x250.jpg);*/
+            background-size: cover;
+/*            background-repeat: no-repeat;*/
+        }
+        
+        article {
+            grid-area: article;
+            background-color: #FFF;
+            min-height: 60vh;
+            margin-left: 1rem;
+            padding: 2rem;
+        }
+        
+        article img {
+            max-width: 100%; /* tame the images */
+            height: auto;
+            margin: 1rem;
+        }
+        
+        aside {
+            grid-area: aside;
+            background-color: #EEE;
+            min-height: 60vh;
+            margin-right: 1rem;
+            padding: 2rem;
+        }
+        
+        footer {
+            grid-area: footer;
+/*
+            display: flex;
+            justify-content: center;
+            align-items: center;
+*/
+            background-color: #CCC;
+/*            min-height: 200px;*/
+            
+            padding: 30px 0;
+            text-align: center;
+        }
+        
+        hr {
+/*            clear: both;*/
+            margin: 1rem 0;
+        }
+        
+        button, input {
+            color: whitesmoke;
+            background-color: #358;
+            padding: 5px 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            font-size: 1.25rem;
+            border-radius: 7px;
+        }
+        
+        /* START Media Query 2 col layout for desktop-laptop */
+        @media (min-width: 1000px) {
+            
+            #app {
+                grid-template-columns: 2fr 1fr;
+                grid-template-areas: 
+                    "header header"
+                    "article aside"
+                    "footer footer";
+                background-color: #AE0505;
+            }
+
+            header {
+                height: 250px;
+                padding: 0.5rem;
+                clip-path: polygon(25% 0, 75% 0, 95% 25%, 80% 55%, 90% 80%, 75% 100%, 25% 100%, 10% 80%, 20% 55%, 5% 25%);
+            }
+            
+            aside {
+                margin: 0 1rem 0 1rem;
+            }
+            
+            article img {
+                width: 50%;
+                height: auto;
+                float: right;
+                margin: 1rem;
+            }
+            
+        } /* END Media Query 2 col layout for desktop-laptop */
+    
+    </style>
+    
+    <link href="https://fonts.googleapis.com/css?family=Righteous" rel="stylesheet">
+    
+</head>
+
+<body>
+    
+    <div id="app">
+    
+        <header>
+            <img src="images/breaking-news-banner-1333x250.jpg" style="width:100%;">
+        </header>
+        
+        <article>
+        
+            <input type="search" id="search-news" 
+                value="Search News" placeholder="Search News">
+            
+            <button id="go-btn">GO</button>
+            
+            <hr/>
+            
+            <h2>News API Results:</h2>
+            
+            <div id="news-div">
+                
+            </div>
+        
+        </article>
+        
+        <aside>
+            <div id="widget"></div>
+        </aside>
+        
+        <footer>
+        </footer>
+    
+    </div>
+    
+    <script src="js/Class/WordCloudify.js"></script>
+    
+    <script>
+        
+        const newsDiv = document.getElementById('news-div') // div to hold all results
+        const goBtn = document.getElementById('go-btn') // submit search btn
+        const searchNews = document.getElementById('search-news') // input box
+        
+        // goBtn.addEventListener('click', loadNews) // click btn to call loadNews func
+        goBtn.addEventListener('click', fetchNews)
+        
+        let searchTerm = "NFL" // the default on-page-load search term
+        // go to this url on page load
+        var url = "https://newsapi.org/v2/everything?q=" + searchTerm + "&from=2018-10-08&sortBy=publishedAt&apiKey=43ae2d6490dd4c3b9e6d14c5bc124ff4"
+        
+        let obj = {}
+
+        let date // Date()
+        let d // the formatted date
+        let t // the formatted time
+        
+        let newsStr = '' // to hold the title and content of the news. 
+        
+        function loadNews() { // this uses Vanilla AJAX (XMLHttpRequest object)
+                        
+            if(searchNews.value != 'Search News') {
+                searchTerm = searchNews.value // get search word(s) from search box
+            }
+            
+            // concat a fresh url to query the search term
+            url = "https://newsapi.org/v2/everything?q=" + searchTerm + "&from=2018-10-08&sortBy=publishedAt&apiKey=43ae2d6490dd4c3b9e6d14c5bc124ff4"
+            
+            // Do AJAX or Fetch call to the url to get the news
+            var xhr = new XMLHttpRequest()
+
+            xhr.onload = function() {
+
+                obj = JSON.parse(xhr.responseText)
+                renderNews()
+
+            }
+            xhr.open('GET', url, true)
+            xhr.send()
+            
+        } // loadNews()
+        
+        function fetchNews() { // this uses Fetch instead of XMLHttpRequest/Vanilla AJAX
+            
+            if(searchNews.value != 'Search News') {
+                searchTerm = searchNews.value // get search word(s) from search box
+            }
+            
+            // concat a fresh url to query the search term
+            url = "https://newsapi.org/v2/everything?q=" + searchTerm + "&from=2018-10-08&sortBy=publishedAt&apiKey=43ae2d6490dd4c3b9e6d14c5bc124ff4"
+
+            var req = new Request(url)
+            
+            // que callbacks w Promises using .then
+            window.fetch(req)
+            
+                .then(function(resp) { // returns a promise object resp 
+                    return resp.json() // parse the JSON
+                })
+            
+                .then(function(myJson) {
+                    obj = myJson // pass the parsed JSON to our object
+                    renderNews() // now that we have the data, render it to the page
+                })
+            
+        } // function fetchNewsAPI() 
+        
+        function renderNews() {
+            
+            let str = ''
+            let newsStr = ''
+            
+            //alert('renderNews')
+            // the properties of each articles array object: source, author, title, description, url, urlToImage, publishedAt, content
+            
+            for(let i = 0; i < 20; i++) {
+                
+                // make the raw date time look nice
+                date = new Date(obj.articles[i].publishedAt)
+                d = date.toLocaleDateString() // make date look nice
+                t = date.toLocaleTimeString() // make time look nice
+                
+                str += '<div class="news">'
+                str += '<h2>' + obj.articles[i].title + '</h2>'
+                str += '<p><strong>' + obj.articles[i].source['name'] + '</p></strong>'
+                
+                if(obj.articles[i].author != undefined) {
+                    str += '<p>' + obj.articles[i].author + '</p>'
+                } else {
+                    str += '<p>Anonymous/Uncredited</p>'
+                }
+
+                str += '<p>' + d + ' at ' + t + '</p>'
+                str += '<p style="margin-right:1rem">' + obj.articles[i].content 
+                str += ' &nbsp; <a href="' + obj.articles[i].url + '">Read&nbsp;More</a></p>'
+                
+                if(obj.articles[i].urlToImage != undefined) {
+                    str += '<img src="' + obj.articles[i].urlToImage + '" style="min-width:50%;min-height:150px"></div><br/><hr/><br/>'
+                } else {
+                    str += '<img src="images/janice-w-bunny-NO-IMG-AVAIL.png"></div><br/><hr/><br/>'
+                }
+                
+                // another string just for the cloudify text
+                newsStr += obj.articles[i].title + ' ' + obj.articles[i].desciption + + ' ' + obj.articles[i].content
+                
+            } // end for loop
+                        
+            newsStr = newsStr.replace(/[^a-z]/gi, ' ');
+                        
+            newsDiv.innerHTML = str
+            
+            var wordcloudfiy = new WordCloudify(newsStr, 'widget')
+                        
+        }
+        
+        // do the default search on page load
+        fetchNews()
+
+    </script>
+    
+</body>
+    
+</html>
+
+
+
+
+
